@@ -16,8 +16,9 @@ if len(file_paths) == 0:
 total_weeks = len(file_paths)  # Total weeks processed
 # window_sizes = [2, 3]
 # thresholds = [1, 1.5]
-window_sizes = [2, 3, 4, 5,...,10]  # Rolling window sizes
-thresholds = [1, 1.5, 2, 2.5,...,7]  # Consumption thresholds
+# change
+window_sizes = [2, 3, 4, 5,6,7,8,9,10]  # Rolling window sizes
+thresholds = [1, 1.5, 2, 2.5,3,3.5,4,4.5,5,5.5,6,6.5,7]  # Consumption thresholds
 
 # ✅ Iterate over 16 (4x4) combinations of window_size and threshold
 for window_size in window_sizes:
