@@ -10,7 +10,8 @@ from dash.exceptions import PreventUpdate
 import datetime
 from Ev_Detection import detect
 from stats_page import  create_stats_layout, process_weekly_csv
-
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 # Constants
 UPLOAD_FOLDER = "uploads"
@@ -628,35 +629,64 @@ def display_page(pathname):
     return main_layout  # 返回主页
 
 
+# @app.callback(
+#     [Output("location-prob-table", "data"),
+#      Output("high-prob-ratio", "children")],
+#     [Input("calculate-btn", "n_clicks")],  # **📌 只有点击按钮才计算**
+#     [State("window-size-slider", "value"),
+#      State("threshold-input", "value")]
+# )
+
 @app.callback(
     [Output("location-prob-table", "data"),
-     Output("high-prob-ratio", "children")],
-    [Input("calculate-btn", "n_clicks")],  # **📌 只有点击按钮才计算**
+     Output("accuracy-output", "children"),
+     Output("precision-output", "children"),
+     Output("recall-output", "children"),
+     Output("f1-score-output", "children")],
+    [Input("calculate-btn", "n_clicks")],
     [State("window-size-slider", "value"),
      State("threshold-input", "value")]
 )
 
+# def update_location_prob(n_clicks, window_size, threshold):
+#     if not n_clicks:
+#         return [], "Waiting..."  # **初始状态**
+#
+#     print(f"📢 Button clicked! Window Size: {window_size}, Threshold: {threshold}")  # ✅ 调试信息
+#
+#     try:
+#         prob_df, high_prob_ratio = process_weekly_csv(window_size, threshold)
+#         if prob_df is None or prob_df.empty:
+#             print("⚠️ No data loaded from process_weekly_csv()!")
+#             return [], "0%"
+#
+#         print(f"📊 Loaded {len(prob_df)} records!")  # ✅ 确保数据加载成功
+#         return prob_df.to_dict("records"), high_prob_ratio  # **返回表格数据 & 占比**
+#
+#     except Exception as e:
+#         print(f"❌ Error in update_location_prob: {e}")
+#         return [], "0%"
+
 def update_location_prob(n_clicks, window_size, threshold):
     if not n_clicks:
-        return [], "Waiting..."  # **初始状态**
+        return [], "Waiting...", "Waiting...", "Waiting...", "Waiting..."
 
-    print(f"📢 Button clicked! Window Size: {window_size}, Threshold: {threshold}")  # ✅ 调试信息
+    print(f"📢 Button clicked! Window Size: {window_size}, Threshold: {threshold}")
 
     try:
-        prob_df, high_prob_ratio = process_weekly_csv(window_size, threshold)
-        if prob_df is None or prob_df.empty:
+        merged_df, accuracy, precision, recall, f1 = process_weekly_csv(window_size, threshold)
+        if merged_df is None or merged_df.empty:
             print("⚠️ No data loaded from process_weekly_csv()!")
-            return [], "0%"
+            return [], "0", "0", "0", "0"
 
-        print(f"📊 Loaded {len(prob_df)} records!")  # ✅ 确保数据加载成功
-        return prob_df.to_dict("records"), high_prob_ratio  # **返回表格数据 & 占比**
+        print(f"📊 Loaded {len(merged_df)} records!")
+        return merged_df.to_dict(
+            "records"), f"Accuracy: {accuracy:.2f}%", f"Precision: {precision:.2f}%", f"Recall: {recall:.2f}%", f"F1 Score: {f1:.2f}%"
 
     except Exception as e:
         print(f"❌ Error in update_location_prob: {e}")
-        return [], "0%"
-
-
+        return [], "0", "0", "0", "0"
 
 
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run(debug=False)
