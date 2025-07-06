@@ -142,13 +142,13 @@ main_layout = dbc.Container([
 ], fluid=True)
 
 app.layout = html.Div([
-    dcc.Location(id='url', refresh=False),  # 监听 URL 变化
+    dcc.Location(id='url', refresh=False),  # Monitor URL changes
     dbc.Container([
         dbc.Row([
             dbc.Col(dbc.Button("Go to Statistics", href="/stats", color="primary", className="mb-3"), width=3),
             dbc.Col(dbc.Button("Go to Home", href="/", color="secondary", className="mb-3"), width=3)
         ]),
-        html.Div(id='page-content')  # 动态渲染页面
+        html.Div(id='page-content')  # Dynamically render pages
     ], fluid=True)
 ])
 
@@ -244,11 +244,11 @@ def process_large_file(filename):
 
 
 
-# 添加一个字典来缓存上传文件的完整路径
+# Add a dictionary to cache the complete path of uploaded files
 file_path_cache = {}
 
 
-# 更新callback以存储完整的文件路径
+# Update callback to store complete file path
 @du.callback(
     output=[
         Output('output-data-upload', 'children'),
@@ -262,10 +262,10 @@ def update_output(filenames):
 
     filename = filenames[0] if isinstance(filenames, list) else filenames
 
-    # 获取完整的文件路径 - dash_uploader的上传回调直接提供完整路径
+    # Get the complete file path - dash_uploader's upload callback directly provides the full path
     file_path = filename
 
-    # 存储完整路径到缓存中，以文件名为键
+    # Store the full path in cache, using filename as key
     base_filename = os.path.basename(file_path)
     file_path_cache[base_filename] = file_path
 
@@ -311,10 +311,10 @@ def update_output(filenames):
         return error_card, None
 
 
-# 获取完整的文件路径的辅助函数
+# Helper function to get the complete file path
 def get_full_file_path(filename):
     """
-    从缓存中获取文件的完整路径，如果没有找到则尝试搜索目录
+    Get the file's complete path from cache, if not found try searching the directory
     """
     base_filename = os.path.basename(filename)
     if base_filename in file_path_cache:
@@ -323,13 +323,13 @@ def get_full_file_path(filename):
         for file in files:
             if file == base_filename:
                 full_path = os.path.join(root, file)
-                file_path_cache[base_filename] = full_path  # 添加到缓存
+                file_path_cache[base_filename] = full_path  # Add to cache
                 return full_path
     default_path = os.path.join(UPLOAD_FOLDER, base_filename)
     return default_path
 
 
-# 修改process_large_file函数使用完整路径
+# Modify process_large_file function to use complete path
 def process_large_file(filename):
     """Process large files in chunks"""
     try:
@@ -404,7 +404,7 @@ def process_large_file(filename):
         raise Exception(f"Error processing file: {str(e)}")
 
 
-# 修改get_charging_periods函数
+# Modify get_charging_periods function
 charging_cache = {}
 
 def get_charging_periods(filename, charge_threshold_ratio, min_consecutive_hours):
@@ -433,7 +433,7 @@ def get_charging_periods(filename, charge_threshold_ratio, min_consecutive_hours
     return charging_cache[base_filename]
 
 
-# Callback: 更新过滤下拉框的选项
+# Callback: Update filter dropdown options
 @app.callback(
     Output("location-dropdown", "options"),
     Input("data-summary", "data")
@@ -445,7 +445,7 @@ def update_location_dropdown(summary):
     return options
 
 
-# 修改download_charging_periods函数
+# Modify download_charging_periods function
 @app.callback(
     Output("download-dataframe-csv", "data"),
     [Input("download-btn", "n_clicks")],
@@ -469,7 +469,7 @@ def export_charging_periods(n_clicks, filenames, charge_threshold_ratio, min_con
     df = pd.DataFrame(data, columns=["LOCATION", "YYYYMMDD", "CHARGING_HOUR"])
     return dcc.send_data_frame(df.to_csv, "charging_periods.csv", index=False)
 
-# 新增回调：根据 data-summary 更新日期选择器的默认值和允许范围
+# New callback: Update date picker's default values and allowed range based on data-summary
 @app.callback(
     [Output('date-range-picker', 'start_date'),
      Output('date-range-picker', 'end_date'),
@@ -481,15 +481,15 @@ def update_date_picker(summary):
     if not summary or "min_date" not in summary or "max_date" not in summary:
         raise PreventUpdate
 
-    # summary 中存储的日期格式为整数形式，例如 20220101
+    # Date format stored in summary is integer form, e.g., 20220101
     min_date_int = summary['min_date']
     max_date_int = summary['max_date']
 
-    # 转换为 "YYYY-MM-DD" 格式的字符串
+    # Convert to "YYYY-MM-DD" format string
     min_date_str = f"{str(min_date_int)[:4]}-{str(min_date_int)[4:6]}-{str(min_date_int)[6:]}"
     max_date_str = f"{str(max_date_int)[:4]}-{str(max_date_int)[4:6]}-{str(max_date_int)[6:]}"
 
-    # 如果希望默认只选择数据的第一天，将 start_date 和 end_date 都设为第一天
+    # If you want to select only the first day of data by default, set both start_date and end_date to the first day
     return min_date_str, min_date_str, min_date_str, max_date_str
 
 
@@ -574,7 +574,7 @@ def update_line_chart(selected_locations, start_date, end_date, filenames, charg
                 showlegend=True
             ))
 
-            # 画红色点标记充电时段
+            # Draw red dots to mark charging periods
             charging_data = [(h, v) for h, v in zip(hours, y_values) if h in charging_hours]
             if charging_data:
                 charging_x, charging_y = zip(*sorted(charging_data))
@@ -619,20 +619,20 @@ def update_line_chart(selected_locations, start_date, end_date, filenames, charg
     Input('url', 'pathname')
 )
 def display_page(pathname):
-    print(f"📢 Page changed: {pathname}")  # ✅ 调试信息
+    print(f"📢 Page changed: {pathname}")  # ✅ Debug info
 
     if pathname == "/stats":
-        print("✅ Rendering Stats Page!")  # ✅ 确保被触发
-        return create_stats_layout()  # 返回统计页面
+        print("✅ Rendering Stats Page!")  # ✅ Ensure it's triggered
+        return create_stats_layout()  # Return statistics page
 
-    print("✅ Rendering Home Page!")  # ✅ 确保主页正常加载
-    return main_layout  # 返回主页
+    print("✅ Rendering Home Page!")  # ✅ Ensure home page loads properly
+    return main_layout  # Return home page
 
 
 # @app.callback(
 #     [Output("location-prob-table", "data"),
 #      Output("high-prob-ratio", "children")],
-#     [Input("calculate-btn", "n_clicks")],  # **📌 只有点击按钮才计算**
+#     [Input("calculate-btn", "n_clicks")],  # **📌 Only calculate when button is clicked**
 #     [State("window-size-slider", "value"),
 #      State("threshold-input", "value")]
 # )
@@ -650,9 +650,9 @@ def display_page(pathname):
 
 # def update_location_prob(n_clicks, window_size, threshold):
 #     if not n_clicks:
-#         return [], "Waiting..."  # **初始状态**
+#         return [], "Waiting..."  # **Initial state**
 #
-#     print(f"📢 Button clicked! Window Size: {window_size}, Threshold: {threshold}")  # ✅ 调试信息
+#     print(f"📢 Button clicked! Window Size: {window_size}, Threshold: {threshold}")  # ✅ Debug info
 #
 #     try:
 #         prob_df, high_prob_ratio = process_weekly_csv(window_size, threshold)
@@ -660,8 +660,8 @@ def display_page(pathname):
 #             print("⚠️ No data loaded from process_weekly_csv()!")
 #             return [], "0%"
 #
-#         print(f"📊 Loaded {len(prob_df)} records!")  # ✅ 确保数据加载成功
-#         return prob_df.to_dict("records"), high_prob_ratio  # **返回表格数据 & 占比**
+#         print(f"📊 Loaded {len(prob_df)} records!")  # ✅ Ensure data loaded successfully
+#         return prob_df.to_dict("records"), high_prob_ratio  # **Return table data & ratio**
 #
 #     except Exception as e:
 #         print(f"❌ Error in update_location_prob: {e}")

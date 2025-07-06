@@ -31,7 +31,7 @@ def process_weekly_csv(window_size, threshold):
     location_data = {}
     total_weeks = len(file_paths)
 
-    # 处理每个文件
+    # Process each file
     for file in file_paths:
         try:
             week_number = os.path.basename(file).split("_")[1].split(".")[0]
@@ -41,18 +41,18 @@ def process_weekly_csv(window_size, threshold):
                 print(f"⚠️ Skipping {file}: 'LOCATION' column not found!")
                 continue
 
-            # 对每个 location 进行处理
+            # Process each location
             for location, group in df.groupby("LOCATION"):
-                usage_matrix = group.iloc[:, 4:28].astype(float).values  # 提取该地点的24小时用电数据
+                usage_matrix = group.iloc[:, 4:28].astype(float).values  # Extract 24-hour electricity usage data for this location
 
-                # 计算该 location 的 baseline：即平均每小时用电量
-                baseline = usage_matrix.mean()  # 计算每周24小时的平均值
-                baseline = baseline.mean()  # 计算该地点的整体 baseline（平均每小时）
+                # Calculate baseline for this location: average hourly electricity usage
+                baseline = usage_matrix.mean()  # Calculate average for 24 hours each week
+                baseline = baseline.mean()  # Calculate overall baseline for this location (average per hour)
 
-                # 判断是否有连续 window_size 个时间点都超过阈值
+                # Check if there are window_size consecutive time points all exceeding threshold
                 condition_met = False
                 for row in usage_matrix:
-                    # 对每一行(每天)检查是否有连续window_size个时间点都超过阈值
+                    # For each row (each day), check if there are window_size consecutive time points all exceeding threshold
                     for i in range(len(row) - window_size + 1):
                         if all(point > (threshold + baseline) for point in row[i:i + window_size]):
                             condition_met = True
@@ -70,7 +70,7 @@ def process_weekly_csv(window_size, threshold):
         except Exception as e:
             print(f"❌ Error processing file {file}: {e}")
 
-    # 计算概率
+    # Calculate probability
     prob_df = pd.DataFrame([{
         "LOCATION": loc,
         "Probability": round(data["Exceed_Count"] / total_weeks, 3) if total_weeks > 0 else 0,
@@ -78,20 +78,20 @@ def process_weekly_csv(window_size, threshold):
         "Baseline": data["Baseline"]
     } for loc, data in location_data.items()])
 
-    # 读取真实充电桩数据
+    # Read actual charger data
     real_data = pd.read_csv(file_paths[-1], usecols=["LOCATION", "# of Chargers"])
     real_data["Has_Charger"] = real_data["# of Chargers"].notna().astype(int)
 
-    # 合并预测数据和真实数据
+    # Merge predicted data with actual data
     merged_df = prob_df.merge(real_data, on="LOCATION", how="left").fillna(0)
     merged_df["Prediction"] = (merged_df["Probability"] > 0.5).astype(int)
 
-    # 创建评估数据的副本，避免影响原始数据
+    # Create a copy of evaluation data to avoid affecting original data
     eval_df = merged_df.copy()
 
-    # 计算样本比例差异
-    tp_fn = eval_df[eval_df["Has_Charger"] == 1]  # 有充电桩的数据
-    fp_tn = eval_df[eval_df["Has_Charger"] == 0]  # 没有充电桩的数据
+    # Calculate sample proportion difference
+    tp_fn = eval_df[eval_df["Has_Charger"] == 1]  # Data with chargers
+    fp_tn = eval_df[eval_df["Has_Charger"] == 0]  # Data without chargers
 
     tp_fn_count = len(tp_fn)
     fp_tn_count = len(fp_tn)
@@ -101,10 +101,10 @@ def process_weekly_csv(window_size, threshold):
     elif fp_tn_count > tp_fn_count:
         fp_tn = fp_tn.sample(n=tp_fn_count, replace=True, random_state=42)
 
-    # 合并回缩放后的数据（仅用于评估）
+    # Merge back the scaled data (for evaluation only)
     balanced_df = pd.concat([tp_fn, fp_tn])
 
-    # 重新计算评估指标（使用平衡后的数据）
+    # Recalculate evaluation metrics (using balanced data)
     y_true = balanced_df["Has_Charger"]
     y_pred = balanced_df["Prediction"]
 
@@ -125,12 +125,12 @@ def process_weekly_csv(window_size, threshold):
     print(f"📢 Recall: {recall:.3f}")
     print(f"📊 F1 Score: {f1:.3f}")
 
-    # 返回原始合并的数据框（不含重复），而不是平衡后的数据框
+    # Return original merged dataframe (without duplicates), not the balanced dataframe
     merged_df = merged_df.drop_duplicates().drop(columns=["Has_Charger"])
     return merged_df, accuracy, precision, recall, f1
 
 
-# **📌 统计页面布局**
+# **📌 Statistics page layout**
 def create_stats_layout():
     return dbc.Container([
         dbc.Row([
